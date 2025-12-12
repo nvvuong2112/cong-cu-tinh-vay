@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Công cụ tính vay</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 20px; }
+input, button { margin: 5px; padding: 5px; }
+table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+th, td { border: 1px solid #ccc; padding: 8px; text-align: right; }
+th { background-color: #f2f2f2; }
+</style>
+</head>
+<body>
+<h1>Công cụ tính vay (HTML)</h1>
+<label>Số tiền vay (B9): <input type="number" id="principal" placeholder="Nhập số tiền"/></label><br/>
+<label>Kỳ hạn (B10 - số tháng): <input type="number" id="term" placeholder="Số tháng"/></label><br/>
+<label>Lãi suất hàng năm (%): <input type="number" id="rate" value="10" placeholder="%" /></label><br/>
+<label>Ngày trả lần 1 (B13): <input type="date" id="startDate" /></label><br/>
+<button onclick="calculateSchedule()">Tính toán</button>
+
+<div id="result"></div>
+
+<script>
+function calculateSchedule() {
+    const principal = parseFloat(document.getElementById('principal').value);
+    const term = parseInt(document.getElementById('term').value);
+    const annualRate = parseFloat(document.getElementById('rate').value) / 100;
+    const startDateValue = document.getElementById('startDate').value;
+    if (isNaN(principal) || isNaN(term) || isNaN(annualRate) || !startDateValue) {
+        alert('Vui lòng nhập đầy đủ thông tin!');
+        return;
+    }
+    const startDate = new Date(startDateValue);
+    const monthlyRate = annualRate / 12;
+    const payment = principal * monthlyRate / (1 - Math.pow(1 + monthlyRate, -term));
+    let remaining = principal;
+    let scheduleHtml = '<h2>Bảng kế hoạch trả nợ</h2>';
+    scheduleHtml += '<p>Khoản thanh toán hàng tháng: ' + payment.toLocaleString('vi-VN', {style:'currency', currency:'VND'}) + '</p>';
+    scheduleHtml += '<table><tr><th>Kỳ</th><th>Ngày trả</th><th>Gốc</th><th>Lãi</th><th>Tổng</th><th>Số dư</th></tr>';
+    for (let i = 1; i <= term; i++) {
+        const interest = remaining * monthlyRate;
+        const principalPay = payment - interest;
+        remaining -= principalPay;
+        const payDate = new Date(startDate);
+        payDate.setMonth(payDate.getMonth() + i - 1);
+        scheduleHtml += '<tr>';
+        scheduleHtml += '<td>' + i + '</td>';
+        scheduleHtml += '<td>' + payDate.toLocaleDateString('vi-VN') + '</td>';
+        scheduleHtml += '<td>' + principalPay.toLocaleString('vi-VN', {style:'currency', currency:'VND'}) + '</td>';
+        scheduleHtml += '<td>' + interest.toLocaleString('vi-VN', {style:'currency', currency:'VND'}) + '</td>';
+        scheduleHtml += '<td>' + payment.toLocaleString('vi-VN', {style:'currency', currency:'VND'}) + '</td>';
+        scheduleHtml += '<td>' + (remaining > 0 ? remaining.toLocaleString('vi-VN', {style:'currency', currency:'VND'}) : '0') + '</td>';
+        scheduleHtml += '</tr>';
+    }
+    scheduleHtml += '</table>';
+    document.getElementById('result').innerHTML = scheduleHtml;
+}
+</script>
+</body>
+</html>
