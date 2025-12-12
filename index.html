@@ -722,8 +722,76 @@ function calculateSchedule() {
     }, 100);
 }
 function exportToExcel() {
+    // Get summary data
+    const principal = document.getElementById('summary-principal').innerText;
+    const interest = document.getElementById('summary-interest').innerText;
+    const total = document.getElementById('summary-total').innerText;
+    const monthly = document.getElementById('summary-monthly').innerText;
+
+    // Create summary sheet
+    const summaryData = [
+        ['LỊCH TRẢ NỢ VAY'],
+        [''],
+        ['Tổng số tiền vay:', principal],
+        ['Tổng lãi phải trả:', interest],
+        ['Tổng phải thanh toán:', total],
+        ['Trả hàng tháng (TB):', monthly]
+    ];
+
+    const ws_summary = XLSX.utils.aoa_to_sheet(summaryData);
+
+    // Set column widths for summary sheet
+    ws_summary['!cols'] = [{ wch: 30 }, { wch: 20 }];
+
+    // Get table data manually to preserve Vietnamese characters
     const table = document.getElementById('schedule-table');
-    const wb = XLSX.utils.table_to_book(table, { sheet: "Lịch trả nợ" });
+    const tableData = [];
+
+    // Add header row
+    const headerRow = [];
+    const headers = table.querySelectorAll('thead th');
+    headers.forEach(header => {
+        // Remove icon tags and get clean text
+        const text = header.textContent.replace(/\s+/g, ' ').trim();
+        headerRow.push(text);
+    });
+    tableData.push(headerRow);
+
+    // Add data rows
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const rowData = [];
+        const cells = row.querySelectorAll('td');
+        cells.forEach(cell => {
+            rowData.push(cell.textContent.trim());
+        });
+        tableData.push(rowData);
+    });
+
+    const ws_schedule = XLSX.utils.aoa_to_sheet(tableData);
+
+    // Set column widths for schedule sheet
+    ws_schedule['!cols'] = [
+        { wch: 8 },  // Kỳ
+        { wch: 15 }, // Ngày trả nợ
+        { wch: 18 }, // Gốc phải trả
+        { wch: 18 }, // Lãi phải trả
+        { wch: 18 }, // Tổng phải trả
+        { wch: 18 }  // Dư nợ còn lại
+    ];
+
+    // Create workbook and add sheets
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws_summary, "Tổng quan");
+    XLSX.utils.book_append_sheet(wb, ws_schedule, "Lịch trả nợ");
+
+    // Write file with proper encoding
+    XLSX.writeFile(wb, 'lich_tra_no.xlsx', { bookType: 'xlsx', type: 'binary', compression: true });
+}
+
+function exportToPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
 
     // Get summary data
     const principal = document.getElementById('summary-principal').innerText;
@@ -731,56 +799,69 @@ function exportToExcel() {
     const total = document.getElementById('summary-total').innerText;
     const monthly = document.getElementById('summary-monthly').innerText;
 
-    // Add summary sheet
-    const summaryData = [
-        ['TỔNG QUAN KHOẢN VAY'],
-        [''],
-        ['Tổng số tiền vay', principal],
-        ['Tổng lãi phải trả', interest],
-        ['Tổng phải thanh toán', total],
-        ['Trả hàng tháng (TB)', monthly]
-    ];
+    // Get table data manually to ensure proper encoding
+    const table = document.getElementById('schedule-table');
+    const headers = [];
+    const headerCells = table.querySelectorAll('thead th');
+    headerCells.forEach(header => {
+        const text = header.textContent.replace(/\s+/g, ' ').trim();
+        headers.push(text);
+    });
 
-    const ws = XLSX.utils.aoa_to_sheet(summaryData);
-    XLSX.utils.book_append_sheet(wb, ws, "Tổng quan");
-
-    XLSX.writeFile(wb, 'lich_tra_no.xlsx');
-}
-
-function exportToPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    const bodyData = [];
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const rowData = [];
+        const cells = row.querySelectorAll('td');
+        cells.forEach(cell => {
+            rowData.push(cell.textContent.trim());
+        });
+        bodyData.push(rowData);
+    });
 
     // Add title
     doc.setFontSize(18);
-    doc.setFont(undefined, 'bold');
-    doc.text("LỊCH TRẢ NỢ VAY", 105, 15, { align: 'center' });
+    doc.setFont('helvetica', 'bold');
+    doc.text("LICH TRA NO VAY", 105, 15, { align: 'center' });
 
     // Add summary
     doc.setFontSize(12);
-    doc.setFont(undefined, 'normal');
-    const principal = document.getElementById('summary-principal').innerText;
-    const interest = document.getElementById('summary-interest').innerText;
-    const total = document.getElementById('summary-total').innerText;
-    const monthly = document.getElementById('summary-monthly').innerText;
+    doc.setFont('helvetica', 'normal');
 
     let yPos = 30;
-    doc.text(`Tổng số tiền vay: ${principal}`, 14, yPos);
+    doc.text(`Tong so tien vay: ${principal}`, 14, yPos);
     yPos += 7;
-    doc.text(`Tổng lãi phải trả: ${interest}`, 14, yPos);
+    doc.text(`Tong lai phai tra: ${interest}`, 14, yPos);
     yPos += 7;
-    doc.text(`Tổng phải thanh toán: ${total}`, 14, yPos);
+    doc.text(`Tong phai thanh toan: ${total}`, 14, yPos);
     yPos += 7;
-    doc.text(`Trả hàng tháng (TB): ${monthly}`, 14, yPos);
+    doc.text(`Tra hang thang (TB): ${monthly}`, 14, yPos);
     yPos += 10;
 
-    // Add table
+    // Add table with data
     doc.autoTable({
-        html: '#schedule-table',
+        head: [headers],
+        body: bodyData,
         startY: yPos,
         theme: 'grid',
-        headStyles: { fillColor: [37, 99, 235], fontStyle: 'bold' },
-        styles: { fontSize: 9, cellPadding: 3 }
+        headStyles: {
+            fillColor: [37, 99, 235],
+            fontStyle: 'bold',
+            halign: 'center'
+        },
+        styles: {
+            fontSize: 9,
+            cellPadding: 3,
+            font: 'helvetica'
+        },
+        columnStyles: {
+            0: { halign: 'center' },
+            1: { halign: 'center' },
+            2: { halign: 'right' },
+            3: { halign: 'right' },
+            4: { halign: 'right' },
+            5: { halign: 'right' }
+        }
     });
 
     doc.save('lich_tra_no.pdf');
