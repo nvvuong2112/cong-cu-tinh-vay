@@ -53,7 +53,3 @@ Repo này chuyển đổi hoàn toàn logic tính toán từ file Excel `Cong_cu
 ## Đóng góp
 
 Nếu bạn muốn đóng góp cải tiến hoặc phát hiện lỗi, hãy mở issue hoặc gửi pull request cho repo này.
-
----
-
-Công cụ này được thiết kế để hỗ trợ người vay và nhân viên ngân hàng tính toán khoản vay nhanh chóng, minh bạch và chính xác. Hy vọng sẽ giúp ích cho công việc và học tập của bạn!
