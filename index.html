@@ -2,59 +2,262 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Công cụ tính vay</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Công cụ tính toán gốc lãi vay dự kiến</title>
+
+<!-- Thư viện xuất file -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
 <style>
-body { font-family: Arial, sans-serif; margin: 20px; }
-input, button { margin: 5px; padding: 5px; }
-table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-th, td { border: 1px solid #ccc; padding: 8px; text-align: right; }
-th { background-color: #f2f2f2; }
+* { box-sizing: border-box; }
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    margin: 0;
+    padding: 20px;
+    background-color: #f5f5f5;
+}
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+header h1 {
+    color: #333;
+    margin-bottom: 10px;
+}
+header p {
+    color: #666;
+    font-size: 14px;
+}
+.input-section, .output-section {
+    margin-bottom: 40px;
+}
+.input-section h2, .output-section h2 {
+    color: #333;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #007bff;
+    display: inline-block;
+    padding-bottom: 5px;
+}
+.form-group {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+.form-group label {
+    flex: 1 1 45%;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #333;
+}
+.form-group input, .form-group select {
+    flex: 1 1 45%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+}
+.button-group {
+    text-align: center;
+    margin-top: 20px;
+}
+.button-group button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+.button-group button:hover {
+    background-color: #0056b3;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+table, th, td {
+    border: 1px solid #ddd;
+}
+th, td {
+    padding: 8px;
+    text-align: center;
+}
+th {
+    background-color: #007bff;
+    color: white;
+}
+tbody tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+.export-buttons {
+    text-align: right;
+    margin-bottom: 20px;
+}
+.export-buttons button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+.export-buttons button:hover {
+    background-color: #218838;
+}
+.error {
+    color: red;
+    font-size: 14px;
+    margin-top: -10px;
+    margin-bottom: 10px;
+}
 </style>
 </head>
 <body>
-<h1>Công cụ tính vay (HTML)</h1>
-<label>Số tiền vay (B9): <input type="number" id="principal" placeholder="Nhập số tiền"/></label><br/>
-<label>Kỳ hạn (B10 - số tháng): <input type="number" id="term" placeholder="Số tháng"/></label><br/>
-<label>Lãi suất hàng năm (%): <input type="number" id="rate" value="10" placeholder="%" /></label><br/>
-<label>Ngày trả lần 1 (B13): <input type="date" id="startDate" /></label><br/>
-<button onclick="calculateSchedule()">Tính toán</button>
-
-<div id="result"></div>
-
+<div class="container">
+    <header>
+        <h1>Công cụ tính toán gốc lãi vay dự kiến</h1>
+        <p>Vui lòng nhập đầy đủ thông tin để tính toán lịch trả nợ</p>
+    </header>
+    <section class="input-section">
+        <h2>Thông tin khoản vay</h2>
+        <div class="form-group">
+            <label for="principal">B9 – Số tiền vay (VND):</label>
+            <input type="number" id="principal" placeholder="Nhập số tiền vay" />
+            <label for="term">B10 – Kỳ hạn vay (tháng):</label>
+            <input type="number" id="term" placeholder="Nhập số tháng vay" />
+            <label for="annualRate">B11 – Lãi suất ưu đãi (%/năm):</label>
+            <input type="number" id="annualRate" placeholder="Lãi suất ưu đãi" />
+            <label for="postRate">B12 – Lãi suất sau ưu đãi (%/năm):</label>
+            <input type="number" id="postRate" placeholder="Lãi suất sau ưu đãi (nếu có)" />
+            <label for="startDate">B13 – Ngày trả lần 1:</label>
+            <input type="date" id="startDate" />
+            <label for="preferentialPeriod">B14 – Số tháng được ưu đãi:</label>
+            <input type="number" id="preferentialPeriod" placeholder="Số tháng được ưu đãi" />
+        </div>
+        <div class="button-group">
+            <button onclick="calculateSchedule()">Tính lịch trả nợ</button>
+            <button onclick="resetForm()">Xóa dữ liệu</button>
+        </div>
+        <div id="error" class="error"></div>
+    </section>
+    <section class="output-section">
+        <h2>Kết quả lịch trả nợ</h2>
+        <div class="export-buttons" id="export-buttons" style="display:none;">
+            <button onclick="exportToExcel()">Xuất Excel</button>
+            <button onclick="exportToPDF()">Xuất PDF</button>
+            <button onclick="exportToWord()">Xuất Word</button>
+        </div>
+        <table id="schedule-table" style="display:none;">
+            <thead>
+                <tr>
+                    <th>Kỳ trả nợ</th>
+                    <th>Ngày trả nợ</th>
+                    <th>Gốc phải trả</th>
+                    <th>Lãi phải trả</th>
+                    <th>Tổng phải trả</th>
+                    <th>Dư nợ còn lại</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </section>
+</div>
 <script>
+function resetForm() {
+    document.getElementById("principal").value = "";
+    document.getElementById("term").value = "";
+    document.getElementById("annualRate").value = "";
+    document.getElementById("postRate").value = "";
+    document.getElementById("startDate").value = "";
+    document.getElementById("preferentialPeriod").value = "";
+    document.getElementById("schedule-table").style.display = "none";
+    document.getElementById("export-buttons").style.display = "none";
+    document.getElementById("error").innerText = "";
+}
 function calculateSchedule() {
     const principal = parseFloat(document.getElementById('principal').value);
     const term = parseInt(document.getElementById('term').value);
-    const annualRate = parseFloat(document.getElementById('rate').value) / 100;
-    const startDateValue = document.getElementById('startDate').value;
-    if (isNaN(principal) || isNaN(term) || isNaN(annualRate) || !startDateValue) {
-        alert('Vui lòng nhập đầy đủ thông tin!');
+    const annualRate = parseFloat(document.getElementById('annualRate').value);
+    const postRate = parseFloat(document.getElementById('postRate').value);
+    const startDate = document.getElementById('startDate').value;
+    const preferentialPeriod = parseInt(document.getElementById('preferentialPeriod').value);
+    if (isNaN(principal) || isNaN(term) || isNaN(annualRate) || !startDate) {
+        document.getElementById('error').innerText = "Vui lòng nhập đầy đủ số tiền vay, kỳ hạn, lãi suất và ngày trả lần 1.";
         return;
     }
-    const startDate = new Date(startDateValue);
-    const monthlyRate = annualRate / 12;
-    const payment = principal * monthlyRate / (1 - Math.pow(1 + monthlyRate, -term));
-    let remaining = principal;
-    let scheduleHtml = '<h2>Bảng kế hoạch trả nợ</h2>';
-    scheduleHtml += '<p>Khoản thanh toán hàng tháng: ' + payment.toLocaleString('vi-VN', {style:'currency', currency:'VND'}) + '</p>';
-    scheduleHtml += '<table><tr><th>Kỳ</th><th>Ngày trả</th><th>Gốc</th><th>Lãi</th><th>Tổng</th><th>Số dư</th></tr>';
+    document.getElementById('error').innerText = "";
+    const monthlyRate = (annualRate / 100) / 12;
+    const monthlyPostRate = postRate ? (postRate / 100) / 12 : monthlyRate;
+    let remainingPrincipal = principal;
+    const monthlyPayment = principal / term;
+    const scheduleTableBody = document.getElementById('schedule-table').getElementsByTagName('tbody')[0];
+    scheduleTableBody.innerHTML = '';
+    let currentDate = new Date(startDate);
     for (let i = 1; i <= term; i++) {
-        const interest = remaining * monthlyRate;
-        const principalPay = payment - interest;
-        remaining -= principalPay;
-        const payDate = new Date(startDate);
-        payDate.setMonth(payDate.getMonth() + i - 1);
-        scheduleHtml += '<tr>';
-        scheduleHtml += '<td>' + i + '</td>';
-        scheduleHtml += '<td>' + payDate.toLocaleDateString('vi-VN') + '</td>';
-        scheduleHtml += '<td>' + principalPay.toLocaleString('vi-VN', {style:'currency', currency:'VND'}) + '</td>';
-        scheduleHtml += '<td>' + interest.toLocaleString('vi-VN', {style:'currency', currency:'VND'}) + '</td>';
-        scheduleHtml += '<td>' + payment.toLocaleString('vi-VN', {style:'currency', currency:'VND'}) + '</td>';
-        scheduleHtml += '<td>' + (remaining > 0 ? remaining.toLocaleString('vi-VN', {style:'currency', currency:'VND'}) : '0') + '</td>';
-        scheduleHtml += '</tr>';
+        let interest;
+        if (preferentialPeriod && i <= preferentialPeriod) {
+            interest = remainingPrincipal * monthlyRate;
+        } else {
+            interest = remainingPrincipal * monthlyPostRate;
+        }
+        const totalPayment = monthlyPayment + interest;
+        remainingPrincipal -= monthlyPayment;
+        const formattedDate = currentDate.toLocaleDateString('vi-VN');
+        const row = scheduleTableBody.insertRow();
+        row.insertCell(0).innerText = i;
+        row.insertCell(1).innerText = formattedDate;
+        row.insertCell(2).innerText = monthlyPayment.toFixed(0);
+        row.insertCell(3).innerText = interest.toFixed(0);
+        row.insertCell(4).innerText = totalPayment.toFixed(0);
+        row.insertCell(5).innerText = remainingPrincipal.toFixed(0);
+        currentDate.setMonth(currentDate.getMonth() + 1);
     }
-    scheduleHtml += '</table>';
-    document.getElementById('result').innerHTML = scheduleHtml;
+    document.getElementById('schedule-table').style.display = '';
+    document.getElementById('export-buttons').style.display = '';
+}
+function exportToExcel() {
+    const table = document.getElementById('schedule-table');
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Lịch trả nợ" });
+    XLSX.writeFile(wb, 'lich_tra_no.xlsx');
+}
+function exportToPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text("Lịch trả nợ", 14, 10);
+    doc.autoTable({ html: '#schedule-table', startY: 20 });
+    doc.save('lich_tra_no.pdf');
+}
+async function exportToWord() {
+    const table = document.getElementById('schedule-table');
+    let doc = new docx.Document();
+    doc.addSection({
+        children: [
+            new docx.Paragraph({ text: "Lịch trả nợ", heading: docx.HeadingLevel.HEADING_1 }),
+            await docx.Table.fromHTMLElement(table)
+        ]
+    });
+    const mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    const buffer = await docx.Packer.toBlob(doc);
+    saveAs(buffer, 'lich_tra_no.docx');
 }
 </script>
 </body>
