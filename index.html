@@ -907,35 +907,115 @@ function exportToPDF() {
 }
 
 async function exportToWord() {
-    const table = document.getElementById('schedule-table');
-    const principal = document.getElementById('summary-principal').innerText;
-    const interest = document.getElementById('summary-interest').innerText;
-    const total = document.getElementById('summary-total').innerText;
-    const monthly = document.getElementById('summary-monthly').innerText;
+    try {
+        // Validate elements exist
+        const table = document.getElementById('schedule-table');
+        const principalEl = document.getElementById('summary-principal');
+        const interestEl = document.getElementById('summary-interest');
+        const totalEl = document.getElementById('summary-total');
+        const monthlyEl = document.getElementById('summary-monthly');
 
-    let doc = new docx.Document();
-    doc.addSection({
-        children: [
-            new docx.Paragraph({
-                text: "LỊCH TRẢ NỢ VAY",
-                heading: docx.HeadingLevel.HEADING_1,
-                alignment: docx.AlignmentType.CENTER
-            }),
-            new docx.Paragraph({ text: "" }),
-            new docx.Paragraph({ text: "TỔNG QUAN KHOẢN VAY", heading: docx.HeadingLevel.HEADING_2 }),
-            new docx.Paragraph({ text: `Tổng số tiền vay: ${principal}` }),
-            new docx.Paragraph({ text: `Tổng lãi phải trả: ${interest}` }),
-            new docx.Paragraph({ text: `Tổng phải thanh toán: ${total}` }),
-            new docx.Paragraph({ text: `Trả hàng tháng (TB): ${monthly}` }),
-            new docx.Paragraph({ text: "" }),
-            new docx.Paragraph({ text: "CHI TIẾT LỊCH TRẢ NỢ", heading: docx.HeadingLevel.HEADING_2 }),
-            await docx.Table.fromHTMLElement(table)
-        ]
-    });
+        if (!table || !principalEl || !interestEl || !totalEl || !monthlyEl) {
+            alert('Vui lòng tính lịch trả nợ trước khi xuất file.');
+            return;
+        }
 
-    const mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-    const buffer = await docx.Packer.toBlob(doc);
-    saveAs(buffer, 'lich_tra_no.docx');
+        const principal = principalEl.innerText;
+        const interest = interestEl.innerText;
+        const total = totalEl.innerText;
+        const monthly = monthlyEl.innerText;
+
+        // Check if table has data
+        const tableRows = table.querySelectorAll('tbody tr');
+        if (tableRows.length === 0) {
+            alert('Không có dữ liệu để xuất. Vui lòng tính lịch trả nợ trước.');
+            return;
+        }
+
+        // Build table rows from HTML table
+        const headers = Array.from(table.querySelectorAll('thead th')).map(th =>
+            th.textContent.replace(/\s+/g, ' ').trim()
+        );
+
+        const docTableRows = [];
+
+        // Header row
+        docTableRows.push(
+            new docx.TableRow({
+                children: headers.map(header =>
+                    new docx.TableCell({
+                        children: [new docx.Paragraph({
+                            children: [new docx.TextRun({ text: header, bold: true })],
+                            alignment: docx.AlignmentType.CENTER
+                        })],
+                        shading: { fill: "4472C4" },
+                        verticalAlign: docx.VerticalAlign.CENTER
+                    })
+                ),
+                tableHeader: true
+            })
+        );
+
+        // Data rows
+        tableRows.forEach(row => {
+            const cells = Array.from(row.querySelectorAll('td')).map(td =>
+                td.textContent.replace(/\s+/g, ' ').trim()
+            );
+            docTableRows.push(
+                new docx.TableRow({
+                    children: cells.map((cellText, index) =>
+                        new docx.TableCell({
+                            children: [new docx.Paragraph({
+                                children: [new docx.TextRun({ text: cellText })],
+                                alignment: index >= 2 ? docx.AlignmentType.RIGHT : docx.AlignmentType.LEFT
+                            })],
+                            verticalAlign: docx.VerticalAlign.CENTER
+                        })
+                    )
+                })
+            );
+        });
+
+        const doc = new docx.Document({
+            sections: [{
+                properties: {},
+                children: [
+                    new docx.Paragraph({
+                        children: [new docx.TextRun({ text: "LỊCH TRẢ NỢ VAY", bold: true, size: 32 })],
+                        heading: docx.HeadingLevel.HEADING_1,
+                        alignment: docx.AlignmentType.CENTER,
+                        spacing: { after: 200 }
+                    }),
+                    new docx.Paragraph({ text: "" }),
+                    new docx.Paragraph({
+                        children: [new docx.TextRun({ text: "TỔNG QUAN KHOẢN VAY", bold: true, size: 24 })],
+                        heading: docx.HeadingLevel.HEADING_2,
+                        spacing: { after: 100 }
+                    }),
+                    new docx.Paragraph({ children: [new docx.TextRun({ text: `Tổng số tiền vay: ${principal}` })] }),
+                    new docx.Paragraph({ children: [new docx.TextRun({ text: `Tổng lãi phải trả: ${interest}` })] }),
+                    new docx.Paragraph({ children: [new docx.TextRun({ text: `Tổng phải thanh toán: ${total}` })] }),
+                    new docx.Paragraph({ children: [new docx.TextRun({ text: `Trả hàng tháng (TB): ${monthly}` })] }),
+                    new docx.Paragraph({ text: "" }),
+                    new docx.Paragraph({
+                        children: [new docx.TextRun({ text: "CHI TIẾT LỊCH TRẢ NỢ", bold: true, size: 24 })],
+                        heading: docx.HeadingLevel.HEADING_2,
+                        spacing: { after: 100 }
+                    }),
+                    new docx.Table({
+                        rows: docTableRows,
+                        width: { size: 100, type: docx.WidthType.PERCENTAGE }
+                    })
+                ]
+            }]
+        });
+
+        const buffer = await docx.Packer.toBlob(doc);
+        saveAs(buffer, 'lich_tra_no.docx');
+    } catch (error) {
+        console.error('Lỗi xuất file DOCX:', error);
+        alert('Có lỗi xảy ra khi xuất file Word. Vui lòng thử lại.');
+    }
 }
 </script>
 </body>
