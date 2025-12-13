@@ -436,6 +436,109 @@ tbody tr:nth-child(even) {
 .fade-in {
     animation: fadeIn 0.5s ease;
 }
+
+/* Fees Section Styles */
+.fees-card {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    border-radius: 12px;
+    padding: 24px;
+    color: white;
+    box-shadow: var(--shadow-md);
+    transition: transform 0.3s ease;
+}
+
+.fees-card:hover {
+    transform: translateY(-4px);
+}
+
+.checkbox-field {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    background-color: var(--bg-light);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.checkbox-field:hover {
+    background-color: rgba(37, 99, 235, 0.1);
+}
+
+.checkbox-field input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--primary-color);
+    cursor: pointer;
+}
+
+.checkbox-field label {
+    font-weight: 500;
+    color: var(--text-dark);
+    cursor: pointer;
+    flex: 1;
+}
+
+.preferential-section {
+    margin-top: 24px;
+    padding: 20px;
+    background: rgba(37, 99, 235, 0.05);
+    border-radius: 12px;
+    border: 2px dashed var(--primary-color);
+}
+
+.preferential-section.hidden {
+    display: none;
+}
+
+.fee-result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.fee-result-item {
+    background: white;
+    padding: 16px;
+    border-radius: 10px;
+    box-shadow: var(--shadow-sm);
+    border-left: 4px solid var(--primary-color);
+}
+
+.fee-result-item.warning {
+    border-left-color: var(--warning-color);
+}
+
+.fee-result-item.danger {
+    border-left-color: var(--danger-color);
+}
+
+.fee-result-item.success {
+    border-left-color: var(--success-color);
+}
+
+.fee-result-label {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 4px;
+}
+
+.fee-result-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    color: var(--primary-color);
+    font-weight: 600;
+}
 </style>
 </head>
 <body>
@@ -611,6 +714,210 @@ tbody tr:nth-child(even) {
             </table>
         </div>
     </div>
+
+    <!-- Fees Section -->
+    <div id="fees-section" style="display:none;" class="card fade-in">
+        <div class="card-header">
+            <i class="fas fa-file-invoice"></i>
+            <h2>Tính phí trả nợ trước hạn</h2>
+        </div>
+
+        <!-- Prepayment Fee Section -->
+        <div class="section-title">
+            <i class="fas fa-calculator"></i>
+            <span>Phí trả nợ trước hạn</span>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-field">
+                <label for="loanDate">
+                    <i class="fas fa-calendar-plus"></i>
+                    Ngày vay/giải ngân
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-calendar"></i>
+                    <input type="date" id="loanDate" />
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label for="earlyRepaymentDate">
+                    <i class="fas fa-calendar-check"></i>
+                    Ngày trả nợ trước hạn dự kiến
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-calendar"></i>
+                    <input type="date" id="earlyRepaymentDate" />
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label for="outstandingPrincipal">
+                    <i class="fas fa-money-bill-wave"></i>
+                    Dư nợ gốc tại ngày trả trước (VND)
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-dollar-sign"></i>
+                    <input type="text" id="outstandingPrincipal" placeholder="Số tiền trả trước hạn" oninput="formatOutstandingInput(this)" />
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label for="feeRate">
+                    <i class="fas fa-percentage"></i>
+                    Mức phí (%)
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-percent"></i>
+                    <input type="text" id="feeRate" readonly placeholder="Tự động tính" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Preferential Fee Section -->
+        <div class="section-title" style="margin-top: 32px;">
+            <i class="fas fa-star"></i>
+            <span>Phí thu hồi ưu đãi lãi suất</span>
+        </div>
+
+        <div class="checkbox-field">
+            <input type="checkbox" id="hasPreferential" onchange="togglePreferentialSection()" />
+            <label for="hasPreferential">Khoản vay có ưu đãi lãi suất</label>
+        </div>
+
+        <div id="preferentialSection" class="preferential-section hidden">
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="commitmentPeriod">
+                        <i class="fas fa-hourglass-half"></i>
+                        Thời hạn cam kết giữ ưu đãi (tháng)
+                    </label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-clock"></i>
+                        <input type="number" id="commitmentPeriod" placeholder="Số tháng cam kết" />
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label for="preferentialRate">
+                        <i class="fas fa-percentage"></i>
+                        Lãi suất ưu đãi (%/năm)
+                    </label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-percent"></i>
+                        <input type="number" step="0.01" id="preferentialRate" placeholder="Lãi suất ưu đãi" />
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label for="standardRate">
+                        <i class="fas fa-chart-line"></i>
+                        Lãi suất chuẩn (%/năm)
+                    </label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-percent"></i>
+                        <input type="number" step="0.01" id="standardRate" placeholder="Lãi suất chuẩn (không ưu đãi)" />
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label for="preferentialOutstanding">
+                        <i class="fas fa-money-bill-wave"></i>
+                        Dư nợ được hưởng ưu đãi (VND)
+                    </label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-dollar-sign"></i>
+                        <input type="text" id="preferentialOutstanding" placeholder="Dư nợ ưu đãi" oninput="formatPreferentialOutstandingInput(this)" />
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label for="daysEnjoyed">
+                        <i class="fas fa-calendar-day"></i>
+                        Số ngày đã hưởng ưu đãi
+                    </label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-clock"></i>
+                        <input type="number" id="daysEnjoyed" placeholder="Tự động tính hoặc nhập" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn btn-primary" onclick="calculateFees()">
+                <i class="fas fa-calculator"></i>
+                Tính phí
+            </button>
+            <button class="btn btn-secondary" onclick="resetFees()">
+                <i class="fas fa-redo"></i>
+                Xóa dữ liệu phí
+            </button>
+        </div>
+
+        <div id="fee-error" class="error"></div>
+    </div>
+
+    <!-- Fee Results Section -->
+    <div id="fee-result-section" style="display:none;" class="card fade-in">
+        <div class="card-header">
+            <i class="fas fa-receipt"></i>
+            <h2>Kết quả tính phí</h2>
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-card warning">
+                <div class="summary-card-header">
+                    <i class="fas fa-clock"></i>
+                    <span>Thời gian vay</span>
+                </div>
+                <div class="summary-card-value" id="fee-loan-months">0 tháng</div>
+                <div class="summary-card-subtitle">Từ ngày giải ngân đến trả trước</div>
+            </div>
+
+            <div class="summary-card info">
+                <div class="summary-card-header">
+                    <i class="fas fa-percentage"></i>
+                    <span>Mức phí áp dụng</span>
+                </div>
+                <div class="summary-card-value" id="fee-rate-applied">0%</div>
+                <div class="summary-card-subtitle">Theo thời gian vay</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-card-header">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span>Phí trả nợ trước hạn</span>
+                </div>
+                <div class="summary-card-value" id="fee-prepayment">0 ₫</div>
+                <div class="summary-card-subtitle">Dư nợ × Mức phí</div>
+            </div>
+
+            <div class="summary-card fees-card">
+                <div class="summary-card-header">
+                    <i class="fas fa-star"></i>
+                    <span>Phí thu hồi ưu đãi</span>
+                </div>
+                <div class="summary-card-value" id="fee-preferential-recovery">0 ₫</div>
+                <div class="summary-card-subtitle">Vi phạm cam kết ưu đãi</div>
+            </div>
+        </div>
+
+        <div class="fee-result-grid">
+            <div class="fee-result-item success">
+                <div class="fee-result-label">Dư nợ gốc trả trước</div>
+                <div class="fee-result-value" id="fee-outstanding-display">0 ₫</div>
+            </div>
+            <div class="fee-result-item warning">
+                <div class="fee-result-label">Tổng phí phải trả</div>
+                <div class="fee-result-value" id="fee-total">0 ₫</div>
+            </div>
+            <div class="fee-result-item danger">
+                <div class="fee-result-label">Tổng tiền cần thanh toán</div>
+                <div class="fee-result-value" id="fee-grand-total">0 ₫</div>
+            </div>
+        </div>
+    </div>
 </div>
 <script>
 // Format số tiền với dấu phân cách hàng nghìn
@@ -657,8 +964,11 @@ function resetForm() {
     document.getElementById("preferentialPeriod").value = "";
     document.getElementById("result-section").style.display = "none";
     document.getElementById("summary-section").style.display = "none";
+    document.getElementById("fees-section").style.display = "none";
     const errorElement = document.getElementById("error");
     errorElement.innerHTML = "";
+    // Also reset fees section
+    resetFees();
 }
 
 function calculateSchedule() {
@@ -745,12 +1055,228 @@ function calculateSchedule() {
     // Show results with animation
     document.getElementById('summary-section').style.display = 'block';
     document.getElementById('result-section').style.display = 'block';
+    document.getElementById('fees-section').style.display = 'block';
 
     // Scroll to results
     setTimeout(() => {
         document.getElementById('summary-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 100);
 }
+
+// ============================================
+// FEES CALCULATION FUNCTIONS
+// ============================================
+
+// Format input for outstanding principal
+function formatOutstandingInput(input) {
+    let cursorPos = input.selectionStart;
+    let oldLength = input.value.length;
+    let value = input.value.replace(/[^\d]/g, '');
+    if (value) {
+        value = Number(value).toLocaleString('de-DE');
+    }
+    input.value = value;
+    let newLength = input.value.length;
+    cursorPos = cursorPos + (newLength - oldLength);
+    if (cursorPos < 0) cursorPos = 0;
+    input.setSelectionRange(cursorPos, cursorPos);
+
+    // Auto-calculate fee rate when dates and amount are filled
+    autoCalculateFeeRate();
+}
+
+// Format input for preferential outstanding
+function formatPreferentialOutstandingInput(input) {
+    let cursorPos = input.selectionStart;
+    let oldLength = input.value.length;
+    let value = input.value.replace(/[^\d]/g, '');
+    if (value) {
+        value = Number(value).toLocaleString('de-DE');
+    }
+    input.value = value;
+    let newLength = input.value.length;
+    cursorPos = cursorPos + (newLength - oldLength);
+    if (cursorPos < 0) cursorPos = 0;
+    input.setSelectionRange(cursorPos, cursorPos);
+}
+
+// Get numeric value from formatted input
+function getOutstandingValue() {
+    let value = document.getElementById('outstandingPrincipal').value;
+    return parseFloat(value.replace(/\./g, '')) || 0;
+}
+
+function getPreferentialOutstandingValue() {
+    let value = document.getElementById('preferentialOutstanding').value;
+    return parseFloat(value.replace(/\./g, '')) || 0;
+}
+
+// Toggle preferential section visibility
+function togglePreferentialSection() {
+    const checkbox = document.getElementById('hasPreferential');
+    const section = document.getElementById('preferentialSection');
+    if (checkbox.checked) {
+        section.classList.remove('hidden');
+    } else {
+        section.classList.add('hidden');
+    }
+}
+
+// Calculate months between two dates
+function getMonthsBetweenDates(startDate, endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+    return months;
+}
+
+// Get days between two dates
+function getDaysBetweenDates(startDate, endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+}
+
+// Get fee rate based on loan duration
+function getFeeRate(months) {
+    if (months <= 24) {
+        return 2.0;
+    } else if (months <= 36) {
+        return 1.5;
+    } else if (months <= 60) {
+        return 1.0;
+    } else {
+        return 0;
+    }
+}
+
+// Auto-calculate fee rate when loan date and early repayment date are filled
+function autoCalculateFeeRate() {
+    const loanDate = document.getElementById('loanDate').value;
+    const earlyRepaymentDate = document.getElementById('earlyRepaymentDate').value;
+
+    if (loanDate && earlyRepaymentDate) {
+        const months = getMonthsBetweenDates(loanDate, earlyRepaymentDate);
+        const feeRate = getFeeRate(months);
+        document.getElementById('feeRate').value = feeRate + '%';
+
+        // Auto-calculate days enjoyed if preferential section is visible
+        const hasPreferential = document.getElementById('hasPreferential').checked;
+        if (hasPreferential) {
+            const days = getDaysBetweenDates(loanDate, earlyRepaymentDate);
+            document.getElementById('daysEnjoyed').value = days;
+        }
+    }
+}
+
+// Add event listeners to date inputs
+document.addEventListener('DOMContentLoaded', function() {
+    const loanDateInput = document.getElementById('loanDate');
+    const earlyRepaymentDateInput = document.getElementById('earlyRepaymentDate');
+
+    if (loanDateInput) {
+        loanDateInput.addEventListener('change', autoCalculateFeeRate);
+    }
+    if (earlyRepaymentDateInput) {
+        earlyRepaymentDateInput.addEventListener('change', autoCalculateFeeRate);
+    }
+});
+
+// Main fee calculation function
+function calculateFees() {
+    const errorElement = document.getElementById('fee-error');
+    errorElement.innerHTML = '';
+
+    // Get input values
+    const loanDate = document.getElementById('loanDate').value;
+    const earlyRepaymentDate = document.getElementById('earlyRepaymentDate').value;
+    const outstandingPrincipal = getOutstandingValue();
+
+    // Validation
+    if (!loanDate) {
+        errorElement.innerHTML = '<i class="fas fa-exclamation-circle"></i> Vui lòng nhập ngày vay/giải ngân';
+        return;
+    }
+    if (!earlyRepaymentDate) {
+        errorElement.innerHTML = '<i class="fas fa-exclamation-circle"></i> Vui lòng nhập ngày trả nợ trước hạn dự kiến';
+        return;
+    }
+    if (new Date(earlyRepaymentDate) <= new Date(loanDate)) {
+        errorElement.innerHTML = '<i class="fas fa-exclamation-circle"></i> Ngày trả nợ trước hạn phải sau ngày vay';
+        return;
+    }
+    if (outstandingPrincipal <= 0) {
+        errorElement.innerHTML = '<i class="fas fa-exclamation-circle"></i> Vui lòng nhập dư nợ gốc hợp lệ';
+        return;
+    }
+
+    // Calculate loan duration and fee rate
+    const months = getMonthsBetweenDates(loanDate, earlyRepaymentDate);
+    const feeRate = getFeeRate(months);
+
+    // Calculate prepayment fee
+    const prepaymentFee = outstandingPrincipal * (feeRate / 100);
+
+    // Calculate preferential recovery fee
+    let preferentialRecoveryFee = 0;
+    const hasPreferential = document.getElementById('hasPreferential').checked;
+
+    if (hasPreferential) {
+        const commitmentPeriod = parseFloat(document.getElementById('commitmentPeriod').value) || 0;
+        const preferentialRate = parseFloat(document.getElementById('preferentialRate').value) || 0;
+        const standardRate = parseFloat(document.getElementById('standardRate').value) || 0;
+        const preferentialOutstanding = getPreferentialOutstandingValue();
+        const daysEnjoyed = parseFloat(document.getElementById('daysEnjoyed').value) || getDaysBetweenDates(loanDate, earlyRepaymentDate);
+
+        // Check if early repayment violates commitment period
+        if (months < commitmentPeriod && preferentialOutstanding > 0) {
+            // Formula: (Standard rate - Preferential rate) * Outstanding * Days / 360
+            const rateDiff = (standardRate - preferentialRate) / 100;
+            preferentialRecoveryFee = rateDiff * preferentialOutstanding * daysEnjoyed / 360;
+        }
+    }
+
+    // Calculate totals
+    const totalFees = prepaymentFee + preferentialRecoveryFee;
+    const grandTotal = outstandingPrincipal + totalFees;
+
+    // Update UI
+    document.getElementById('fee-loan-months').innerText = months + ' tháng';
+    document.getElementById('fee-rate-applied').innerText = feeRate + '%';
+    document.getElementById('fee-prepayment').innerText = formatCurrency(prepaymentFee);
+    document.getElementById('fee-preferential-recovery').innerText = formatCurrency(preferentialRecoveryFee);
+    document.getElementById('fee-outstanding-display').innerText = formatCurrency(outstandingPrincipal);
+    document.getElementById('fee-total').innerText = formatCurrency(totalFees);
+    document.getElementById('fee-grand-total').innerText = formatCurrency(grandTotal);
+
+    // Show results
+    document.getElementById('fee-result-section').style.display = 'block';
+
+    // Scroll to results
+    setTimeout(() => {
+        document.getElementById('fee-result-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
+}
+
+// Reset fees form
+function resetFees() {
+    document.getElementById('loanDate').value = '';
+    document.getElementById('earlyRepaymentDate').value = '';
+    document.getElementById('outstandingPrincipal').value = '';
+    document.getElementById('feeRate').value = '';
+    document.getElementById('hasPreferential').checked = false;
+    document.getElementById('preferentialSection').classList.add('hidden');
+    document.getElementById('commitmentPeriod').value = '';
+    document.getElementById('preferentialRate').value = '';
+    document.getElementById('standardRate').value = '';
+    document.getElementById('preferentialOutstanding').value = '';
+    document.getElementById('daysEnjoyed').value = '';
+    document.getElementById('fee-result-section').style.display = 'none';
+    document.getElementById('fee-error').innerHTML = '';
+}
+
 function exportToExcel() {
     // Get summary data
     const principal = document.getElementById('summary-principal').innerText;
