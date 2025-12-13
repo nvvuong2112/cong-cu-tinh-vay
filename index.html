@@ -459,7 +459,7 @@ tbody tr:nth-child(even) {
                 </label>
                 <div class="input-wrapper">
                     <i class="fas fa-dollar-sign"></i>
-                    <input type="number" id="principal" placeholder="Nhập số tiền vay" />
+                    <input type="text" id="principal" placeholder="Nhập số tiền vay" oninput="formatPrincipalInput(this)" />
                 </div>
             </div>
 
@@ -618,6 +618,34 @@ function formatCurrency(amount) {
     return new Intl.NumberFormat('vi-VN').format(Math.round(amount)) + ' ₫';
 }
 
+// Format số tiền vay khi nhập (thêm dấu chấm phân tách)
+function formatPrincipalInput(input) {
+    // Lưu vị trí con trỏ
+    let cursorPos = input.selectionStart;
+    let oldLength = input.value.length;
+
+    // Loại bỏ tất cả ký tự không phải số
+    let value = input.value.replace(/[^\d]/g, '');
+
+    // Format số với dấu chấm phân tách hàng nghìn
+    if (value) {
+        value = parseInt(value, 10).toLocaleString('de-DE');
+    }
+
+    input.value = value;
+
+    // Điều chỉnh vị trí con trỏ
+    let newLength = input.value.length;
+    cursorPos = cursorPos + (newLength - oldLength);
+    input.setSelectionRange(cursorPos, cursorPos);
+}
+
+// Lấy giá trị số từ input đã format
+function getPrincipalValue() {
+    let value = document.getElementById('principal').value;
+    return parseFloat(value.replace(/\./g, '')) || 0;
+}
+
 function resetForm() {
     document.getElementById("principal").value = "";
     document.getElementById("term").value = "";
@@ -632,7 +660,7 @@ function resetForm() {
 }
 
 function calculateSchedule() {
-    const principal = parseFloat(document.getElementById('principal').value);
+    const principal = getPrincipalValue();
     const term = parseInt(document.getElementById('term').value);
     const annualRate = parseFloat(document.getElementById('annualRate').value);
     const postRate = parseFloat(document.getElementById('postRate').value);
