@@ -26,6 +26,9 @@ Repo này chuyển đổi hoàn toàn logic tính toán từ file Excel `Cong_cu
     - > 36 tháng và <= 60 tháng: **1,0%**
     - > 60 tháng: không thu phí
   - Tính số tiền phí = Dư nợ tại ngày trả nợ dự kiến × Tỷ lệ phí.
+  - **Phí thu hồi ưu đãi lãi suất** (nếu có):
+    - Áp dụng nếu người vay vi phạm thời gian cam kết vay.
+    - Công thức: `(Lãi suất thường - Lãi suất ưu đãi) * Dư nợ * Số ngày thực tế hưởng / 360`.
   - Sinh bảng gửi thông tin tính phí cho khách hàng.
 
 - **Triển khai dễ dàng**:
