@@ -917,6 +917,17 @@ tbody tr:nth-child(even) {
                 <div class="fee-result-value" id="fee-grand-total">0 ₫</div>
             </div>
         </div>
+
+        <div class="export-buttons" style="justify-content: flex-start; margin-top: 20px;">
+            <button class="btn btn-success" onclick="exportFeeToExcel()">
+                <i class="fas fa-file-excel"></i>
+                Xuất Excel phí
+            </button>
+            <button class="btn btn-success" onclick="exportFeeToWord()">
+                <i class="fas fa-file-word"></i>
+                Xuất Word phí
+            </button>
+        </div>
     </div>
 </div>
 <script>
@@ -969,9 +980,12 @@ function resetForm() {
     errorElement.innerHTML = "";
     // Also reset fees section
     resetFees();
-}
+    }
 
-function calculateSchedule() {
+// Lưu kết quả tính phí gần nhất để xuất file
+let lastFeeResult = null;
+
+    function calculateSchedule() {
     const principal = getPrincipalValue();
     const term = parseInt(document.getElementById('term').value);
     const annualRate = parseFloat(document.getElementById('annualRate').value);
@@ -1205,6 +1219,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function calculateFees() {
     const errorElement = document.getElementById('fee-error');
     errorElement.innerHTML = '';
+    lastFeeResult = null;
 
     // Get input values
     const loanDate = document.getElementById('loanDate').value;
@@ -1256,20 +1271,38 @@ function calculateFees() {
     }
 
     // Calculate totals
-    const totalFees = prepaymentFee + preferentialRecoveryFee;
-    const grandTotal = outstandingPrincipal + totalFees;
+        const totalFees = prepaymentFee + preferentialRecoveryFee;
+        const grandTotal = outstandingPrincipal + totalFees;
 
-    // Update UI
-    document.getElementById('fee-loan-months').innerText = months + ' tháng';
+        // Update UI
+        document.getElementById('fee-loan-months').innerText = months + ' tháng';
     document.getElementById('fee-rate-applied').innerText = feeRate + '%';
     document.getElementById('fee-prepayment').innerText = formatCurrency(prepaymentFee);
     document.getElementById('fee-preferential-recovery').innerText = formatCurrency(preferentialRecoveryFee);
     document.getElementById('fee-outstanding-display').innerText = formatCurrency(outstandingPrincipal);
-    document.getElementById('fee-total').innerText = formatCurrency(totalFees);
-    document.getElementById('fee-grand-total').innerText = formatCurrency(grandTotal);
+        document.getElementById('fee-total').innerText = formatCurrency(totalFees);
+        document.getElementById('fee-grand-total').innerText = formatCurrency(grandTotal);
 
-    // Show results
-    document.getElementById('fee-result-section').style.display = 'block';
+        lastFeeResult = {
+            loanDate,
+            earlyRepaymentDate,
+            months,
+            feeRate,
+            outstandingPrincipal,
+            prepaymentFee,
+            hasPreferential,
+            commitmentPeriod: parseFloat(document.getElementById('commitmentPeriod').value) || 0,
+            preferentialRate: parseFloat(document.getElementById('preferentialRate').value) || 0,
+            standardRate: parseFloat(document.getElementById('standardRate').value) || 0,
+            preferentialOutstanding: getPreferentialOutstandingValue(),
+            daysEnjoyed: parseFloat(document.getElementById('daysEnjoyed').value) || getDaysBetweenDates(loanDate, earlyRepaymentDate),
+            preferentialRecoveryFee,
+            totalFees,
+            grandTotal
+        };
+
+        // Show results
+        document.getElementById('fee-result-section').style.display = 'block';
 
     // Scroll to results
     setTimeout(() => {
@@ -1292,6 +1325,155 @@ function resetFees() {
     document.getElementById('daysEnjoyed').value = '';
     document.getElementById('fee-result-section').style.display = 'none';
     document.getElementById('fee-error').innerHTML = '';
+    lastFeeResult = null;
+}
+
+function buildFeeExplanationRows() {
+    if (!lastFeeResult) return [];
+
+    const rows = [
+        ['Dư nợ gốc trả trước', formatCurrency(lastFeeResult.outstandingPrincipal)],
+        ['Mức phí áp dụng', `${lastFeeResult.feeRate}%`],
+        ['Phí trả nợ trước hạn', `${formatCurrency(lastFeeResult.outstandingPrincipal)} × ${lastFeeResult.feeRate}% = ${formatCurrency(lastFeeResult.prepaymentFee)}`]
+    ];
+
+    if (lastFeeResult.hasPreferential) {
+        rows.push(
+            ['Thông tin ưu đãi', `Cam kết ${lastFeeResult.commitmentPeriod} tháng | LS ưu đãi ${lastFeeResult.preferentialRate}% | LS chuẩn ${lastFeeResult.standardRate}%`],
+            [
+                'Phí thu hồi ưu đãi',
+                `(${lastFeeResult.standardRate}% - ${lastFeeResult.preferentialRate}%) × ${formatCurrency(lastFeeResult.preferentialOutstanding)} × ${lastFeeResult.daysEnjoyed} ngày / 360 = ${formatCurrency(lastFeeResult.preferentialRecoveryFee)}`
+            ]
+        );
+    }
+
+    rows.push(
+        ['Tổng phí phải trả', `${formatCurrency(lastFeeResult.prepaymentFee)} + ${formatCurrency(lastFeeResult.preferentialRecoveryFee)} = ${formatCurrency(lastFeeResult.totalFees)}`],
+        ['Tổng tiền cần thanh toán', `${formatCurrency(lastFeeResult.outstandingPrincipal)} + ${formatCurrency(lastFeeResult.totalFees)} = ${formatCurrency(lastFeeResult.grandTotal)}`]
+    );
+
+    return rows;
+}
+
+function exportFeeToExcel() {
+    if (!lastFeeResult) {
+        alert('Vui lòng tính phí trước khi xuất file.');
+        return;
+    }
+
+    const summaryData = [
+        ['KẾT QUẢ TÍNH PHÍ TRẢ NỢ TRƯỚC HẠN'],
+        [''],
+        ['Ngày vay/giải ngân', lastFeeResult.loanDate],
+        ['Ngày trả nợ trước hạn', lastFeeResult.earlyRepaymentDate],
+        ['Thời gian vay', `${lastFeeResult.months} tháng`],
+        ['Dư nợ gốc trả trước', formatCurrency(lastFeeResult.outstandingPrincipal)],
+        ['Mức phí áp dụng', `${lastFeeResult.feeRate}%`],
+        ['Phí trả nợ trước hạn', formatCurrency(lastFeeResult.prepaymentFee)],
+        ['Phí thu hồi ưu đãi', formatCurrency(lastFeeResult.preferentialRecoveryFee)],
+        ['Tổng phí phải trả', formatCurrency(lastFeeResult.totalFees)],
+        ['Tổng tiền cần thanh toán', formatCurrency(lastFeeResult.grandTotal)]
+    ];
+
+    const explanationRows = buildFeeExplanationRows();
+    const explanationData = [['CÁCH TÍNH CHI TIẾT']];
+    explanationData.push(['Diễn giải', 'Giá trị/Tính toán']);
+    explanationData.push(['', '']);
+    explanationRows.forEach(row => explanationData.push(row));
+
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+    wsSummary['!cols'] = [{ wch: 30 }, { wch: 50 }];
+
+    const wsExplanation = XLSX.utils.aoa_to_sheet(explanationData);
+    wsExplanation['!cols'] = [{ wch: 32 }, { wch: 70 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'Kết quả phí');
+    XLSX.utils.book_append_sheet(wb, wsExplanation, 'Cách tính');
+
+    XLSX.writeFile(wb, 'phi_tra_no_truoc_han.xlsx', { bookType: 'xlsx', type: 'binary', compression: true });
+}
+
+async function exportFeeToWord() {
+    if (!lastFeeResult) {
+        alert('Vui lòng tính phí trước khi xuất file.');
+        return;
+    }
+
+    try {
+        const explanationRows = buildFeeExplanationRows();
+
+        const tableRows = [
+            new docx.TableRow({
+                tableHeader: true,
+                children: [
+                    new docx.TableCell({
+                        children: [new docx.Paragraph({ text: 'Diễn giải', alignment: docx.AlignmentType.CENTER, bold: true })],
+                        shading: { fill: '4472C4' }
+                    }),
+                    new docx.TableCell({
+                        children: [new docx.Paragraph({ text: 'Giá trị/Tính toán', alignment: docx.AlignmentType.CENTER, bold: true })],
+                        shading: { fill: '4472C4' }
+                    })
+                ]
+            })
+        ];
+
+        explanationRows.forEach(row => {
+            tableRows.push(
+                new docx.TableRow({
+                    children: [
+                        new docx.TableCell({ children: [new docx.Paragraph({ text: row[0] })] }),
+                        new docx.TableCell({ children: [new docx.Paragraph({ text: row[1] })] })
+                    ]
+                })
+            );
+        });
+
+        const doc = new docx.Document({
+            sections: [{
+                properties: {},
+                children: [
+                    new docx.Paragraph({
+                        children: [new docx.TextRun({ text: 'KẾT QUẢ TÍNH PHÍ TRẢ NỢ TRƯỚC HẠN', bold: true, size: 32 })],
+                        heading: docx.HeadingLevel.HEADING_1,
+                        alignment: docx.AlignmentType.CENTER,
+                        spacing: { after: 300 }
+                    }),
+                    new docx.Paragraph({
+                        children: [new docx.TextRun({ text: 'TỔNG QUAN', bold: true, size: 26 })],
+                        heading: docx.HeadingLevel.HEADING_2,
+                        spacing: { after: 200 }
+                    }),
+                    new docx.Paragraph({ text: `Ngày vay/giải ngân: ${lastFeeResult.loanDate}` }),
+                    new docx.Paragraph({ text: `Ngày trả nợ trước hạn: ${lastFeeResult.earlyRepaymentDate}` }),
+                    new docx.Paragraph({ text: `Thời gian vay: ${lastFeeResult.months} tháng` }),
+                    new docx.Paragraph({ text: `Dư nợ gốc trả trước: ${formatCurrency(lastFeeResult.outstandingPrincipal)}` }),
+                    new docx.Paragraph({ text: `Mức phí áp dụng: ${lastFeeResult.feeRate}%` }),
+                    new docx.Paragraph({ text: `Phí trả nợ trước hạn: ${formatCurrency(lastFeeResult.prepaymentFee)}` }),
+                    new docx.Paragraph({ text: `Phí thu hồi ưu đãi: ${formatCurrency(lastFeeResult.preferentialRecoveryFee)}` }),
+                    new docx.Paragraph({ text: `Tổng phí phải trả: ${formatCurrency(lastFeeResult.totalFees)}` }),
+                    new docx.Paragraph({ text: `Tổng tiền cần thanh toán: ${formatCurrency(lastFeeResult.grandTotal)}` }),
+                    new docx.Paragraph({ text: '' }),
+                    new docx.Paragraph({
+                        children: [new docx.TextRun({ text: 'CÁCH TÍNH CHI TIẾT', bold: true, size: 26 })],
+                        heading: docx.HeadingLevel.HEADING_2,
+                        spacing: { after: 200 }
+                    }),
+                    new docx.Table({
+                        rows: tableRows,
+                        width: { size: 100, type: docx.WidthType.PERCENTAGE }
+                    })
+                ]
+            }]
+        });
+
+        const buffer = await docx.Packer.toBlob(doc);
+        saveAs(buffer, 'phi_tra_no_truoc_han.docx');
+    } catch (error) {
+        console.error('Lỗi xuất file DOCX phí:', error);
+        alert('Có lỗi xảy ra khi xuất file Word cho phí. Vui lòng thử lại.');
+    }
 }
 
 function exportToExcel() {
