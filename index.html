@@ -1003,11 +1003,28 @@ function calculateSchedule() {
         return;
     }
 
+    // Validate postRate if provided
+    if (!isNaN(postRate) && postRate < 0) {
+        errorElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Lãi suất sau ưu đãi không thể âm.';
+        return;
+    }
+
+    // Validate preferentialPeriod if provided
+    if (!isNaN(preferentialPeriod) && preferentialPeriod < 0) {
+        errorElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Kỳ ưu đãi không thể âm.';
+        return;
+    }
+
+    if (!isNaN(preferentialPeriod) && preferentialPeriod > term) {
+        errorElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Kỳ ưu đãi không thể lớn hơn kỳ hạn vay.';
+        return;
+    }
+
     errorElement.innerHTML = "";
 
     // Calculate
     const monthlyRate = (annualRate / 100) / 12;
-    const monthlyPostRate = postRate ? (postRate / 100) / 12 : monthlyRate;
+    const monthlyPostRate = !isNaN(postRate) ? (postRate / 100) / 12 : monthlyRate;
     let remainingPrincipal = principal;
     const monthlyPayment = principal / term;
 
