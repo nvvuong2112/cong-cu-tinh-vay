@@ -645,7 +645,7 @@ tbody tr:nth-child(even) {
             <div id="error" class="error"></div>
         </div>
 
-        <div id="fees-section" style="display:none;" class="card fade-in">
+        <div id="fees-section" class="card fade-in">
             <div class="card-header">
                 <i class="fas fa-file-invoice"></i>
                 <h2>Tính phí trả nợ trước hạn</h2>
@@ -1006,7 +1006,6 @@ function resetForm() {
     document.getElementById("preferentialPeriod").value = "";
     document.getElementById("result-section").style.display = "none";
     document.getElementById("summary-section").style.display = "none";
-    document.getElementById("fees-section").style.display = "none";
     const errorElement = document.getElementById("error");
     errorElement.innerHTML = "";
     // Also reset fees section
@@ -1117,7 +1116,6 @@ let lastFeeResult = null;
     // Show results with animation
     document.getElementById('summary-section').style.display = 'block';
     document.getElementById('result-section').style.display = 'block';
-    document.getElementById('fees-section').style.display = 'block';
 
     // Scroll to results
     setTimeout(() => {
