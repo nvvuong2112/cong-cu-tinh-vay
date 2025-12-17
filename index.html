@@ -1067,8 +1067,8 @@ let lastFeeResult = null;
     errorElement.innerHTML = "";
 
     // Calculate
-    const monthlyRate = (annualRate / 100) / 12;
-    const monthlyPostRate = !isNaN(postRate) ? (postRate / 100) / 12 : monthlyRate;
+    const dailyRate = (annualRate / 100) / 365;
+    const dailyPostRate = !isNaN(postRate) ? (postRate / 100) / 365 : dailyRate;
     let remainingPrincipal = principal;
     const monthlyPayment = principal / term;
 
@@ -1076,16 +1076,17 @@ let lastFeeResult = null;
     scheduleTableBody.innerHTML = '';
 
     let currentDate = new Date(startDate);
+    let previousPaymentDate = new Date(startDate);
+    previousPaymentDate.setMonth(previousPaymentDate.getMonth() - 1);
     let totalInterest = 0;
 
     // Generate schedule
     for (let i = 1; i <= term; i++) {
-        let interest;
-        if (preferentialPeriod && i <= preferentialPeriod) {
-            interest = remainingPrincipal * monthlyRate;
-        } else {
-            interest = remainingPrincipal * monthlyPostRate;
-        }
+        const periodStart = new Date(previousPaymentDate);
+        const periodEnd = new Date(currentDate);
+        const interestDays = getDaysBetweenDates(periodStart, periodEnd);
+        const appliedDailyRate = (preferentialPeriod && i <= preferentialPeriod) ? dailyRate : dailyPostRate;
+        const interest = remainingPrincipal * appliedDailyRate * interestDays;
 
         totalInterest += interest;
         const totalPayment = monthlyPayment + interest;
@@ -1101,6 +1102,7 @@ let lastFeeResult = null;
         row.insertCell(4).innerText = formatCurrency(totalPayment);
         row.insertCell(5).innerText = formatCurrency(Math.max(0, remainingPrincipal));
 
+        previousPaymentDate = new Date(currentDate);
         currentDate.setMonth(currentDate.getMonth() + 1);
     }
 
@@ -1182,6 +1184,8 @@ function togglePreferentialSection() {
     }
 }
 
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
 // Calculate months between two dates
 function getMonthsBetweenDates(startDate, endDate) {
     const start = new Date(startDate);
@@ -1190,12 +1194,18 @@ function getMonthsBetweenDates(startDate, endDate) {
     return months;
 }
 
-// Get days between two dates
+// Get days between two dates using Actual/365, excluding the start date and including the end date
 function getDaysBetweenDates(startDate, endDate) {
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const diffTime = Math.abs(end - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (isNaN(start) || isNaN(end) || end <= start) {
+        return 0;
+    }
+
+    const utcStart = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+    const utcEnd = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+    const diffDays = Math.floor((utcEnd - utcStart) / MS_PER_DAY) + 1;
     return diffDays;
 }
 
