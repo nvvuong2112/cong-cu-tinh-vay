@@ -1205,7 +1205,7 @@ function getDaysBetweenDates(startDate, endDate) {
 
     const utcStart = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
     const utcEnd = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
-    const diffDays = Math.floor((utcEnd - utcStart) / MS_PER_DAY) + 1;
+    const diffDays = Math.floor((utcEnd - utcStart) / MS_PER_DAY);
     return diffDays;
 }
 
